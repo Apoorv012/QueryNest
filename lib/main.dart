@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'dart:io';
+import 'package:file_picker/file_picker.dart';
+import 'package:query_nest/utils.dart';
+import 'package:query_nest/api_service.dart';
 
 void main() {
   runApp(const QueryNestApp());
@@ -34,16 +38,60 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   final TextEditingController _controller = TextEditingController();
-  List<String> results = [];
+  List<Map<String, String>> results = [];
+  bool _isUploading = false;
 
-  void _search() {
-    setState(() {
-      results = [
-        "Project_Report.pdf",
-        "Meeting_Notes.txt",
-        "AI_Research.docx",
-      ]; // dummy results
-    });
+  void _search() async {
+    final query = _controller.text.trim();
+    if (query.isEmpty) return;
+
+    try {
+      final resultsData = await ApiService.search(query);
+      setState(() {
+        results = resultsData
+            .map((doc) => {
+                  "filename": doc["filename"] as String,
+                  "snippet": doc["snippet"] as String,
+                })
+            .toList();
+      });
+    } catch (e) {
+      print("Search error: $e");
+    }
+  }
+
+  void _uploadFile() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['pdf'],
+    );
+
+    if (result != null && result.files.single.path != null) {
+      File file = File(result.files.single.path!);
+
+      setState(() {
+        _isUploading = true;
+      });
+
+      try {
+        final message = await ApiService.uploadFile(file);
+
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(message)),
+        );
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("❌ Upload failed: $e")),
+        );
+        print("Upload error: $e");
+      } finally {
+        setState(() {
+          _isUploading = false;
+        });
+      }
+    }
   }
 
   @override
@@ -91,8 +139,9 @@ class _HomePageState extends State<HomePage> {
                           ),
                           child: ListTile(
                             leading: const Icon(Icons.insert_drive_file),
-                            title: Text(results[index]),
-                            subtitle: const Text("Sample matching snippet..."),
+                            title: Text(results[index]["filename"] ?? ""),
+                            subtitle: Text(
+                                cleanText(results[index]["snippet"] ?? "")),
                           ),
                         );
                       },
@@ -101,10 +150,18 @@ class _HomePageState extends State<HomePage> {
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {},
-        child: const Icon(Icons.add),
-      ),
+      floatingActionButton: _isUploading
+          ? const FloatingActionButton(
+              onPressed: null, // disabled
+              backgroundColor: Colors.grey,
+              child: CircularProgressIndicator(
+                color: Colors.white,
+              ),
+            )
+          : FloatingActionButton(
+              onPressed: _uploadFile,
+              child: const Icon(Icons.add),
+            ),
     );
   }
 }
