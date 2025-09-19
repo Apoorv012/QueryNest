@@ -3,10 +3,15 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:query_nest/utils.dart';
 import 'package:query_nest/api_service.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 void main() {
   runApp(const QueryNestApp());
 }
+
+// class Child : Parent {};
+// class MyApp extends StatefulWidget {}
+
 
 class QueryNestApp extends StatelessWidget {
   const QueryNestApp({super.key});
@@ -50,8 +55,9 @@ class _HomePageState extends State<HomePage> {
       setState(() {
         results = resultsData
             .map((doc) => {
-                  "filename": doc["filename"] as String,
-                  "snippet": doc["snippet"] as String,
+                  "filename": doc["filename"]?.toString() ?? "",
+                  "snippet": doc["snippet"]?.toString() ?? "",
+                  "url": doc["url"]?.toString() ?? "",
                 })
             .toList();
       });
@@ -59,6 +65,14 @@ class _HomePageState extends State<HomePage> {
       print("Search error: $e");
     }
   }
+
+  Future<void> _openLink(String url) async {
+    final Uri uri = Uri.parse(url);
+    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+      throw Exception('Could not launch $url');
+    }
+  }
+
 
   void _uploadFile() async {
     final result = await FilePicker.platform.pickFiles(
@@ -142,6 +156,16 @@ class _HomePageState extends State<HomePage> {
                             title: Text(results[index]["filename"] ?? ""),
                             subtitle: Text(
                                 cleanText(results[index]["snippet"] ?? "")),
+                            onTap: () {
+                                final url = results[index]["url"];
+                                print("Click happened");
+                                print(url);
+                                if (url != null && url.isNotEmpty) {
+                                  print("opening link");
+                                  print(url);
+                                  _openLink(url);
+                                }
+                              },
                           ),
                         );
                       },

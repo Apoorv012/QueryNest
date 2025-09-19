@@ -3,7 +3,9 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 
 class ApiService {
-  static const String baseUrl = "https://ApoorvMittal-querynest-backend.hf.space"; 
+  // static const String baseUrl = "https://apoorvmittal-querynest-backend.hf.space"; 
+  static const String baseUrl = "http://localhost:8000"; 
+  // baseURL = localhost:8000
   // replace with your deployed backend later
 
   /// 🔍 Search query
