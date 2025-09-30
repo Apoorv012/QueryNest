@@ -16,7 +16,7 @@ Instead of searching files by their names, QueryNest lets you **ask questions** 
 
 ## 🛠️ Tech Stack
 - **Frontend:** Flutter  
-- **Backend/Vector Store:** Python + Vector DB (e.g., Pinecone / Weaviate / FAISS)  
+- **Backend/Vector Store:** Python + Vector DB (FAISS)  
 - **Platform:** Works on Android, iOS (with Mac for builds), Web, and Desktop  
 
 ---
